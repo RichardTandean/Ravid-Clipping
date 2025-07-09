@@ -1,0 +1,275 @@
+version: '3.8'
+
+services:
+  # Redis for job queues
+  redis:
+    image: redis:7-alpine
+    container_name: clipping-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ollama for AI processing
+  ollama:
+    image: ollama/ollama:latest
+    container_name: clipping-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Queue Service
+  queue-service:
+    build:
+      context: ./queue-service
+      dockerfile: Dockerfile
+    container_name: clipping-queue-service
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=3004
+    volumes:
+      - ./queue-service:/app
+      - /app/node_modules
+      - queue_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+  # AI Worker
+  ai-worker:
+    build:
+      context: ./workers/ai
+      dockerfile: Dockerfile
+    container_name: clipping-ai-worker
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2:3b
+      - AI_WORKER_CONCURRENCY=2
+    volumes:
+      - ./workers/ai:/app
+      - /app/node_modules
+      - ai_logs:/app/logs
+      - ai_models:/app/models
+    depends_on:
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+  # Transcription Worker
+  transcription-worker:
+    build:
+      context: ./workers/transcription
+      dockerfile: Dockerfile
+    container_name: clipping-transcription-worker
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WHISPER_MODEL=medium
+      - TRANSCRIPTION_WORKER_CONCURRENCY=1
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - FFPROBE_PATH=/usr/bin/ffprobe
+    volumes:
+      - ./workers/transcription:/app
+      - /app/node_modules
+      - transcription_logs:/app/logs
+      - transcription_models:/app/models
+      - transcription_temp:/app/temp
+      - transcription_uploads:/app/uploads
+      - transcription_output:/app/output
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+  # Whisper Timestamp Worker
+  whisper-timestamp-worker:
+    build:
+      context: ./workers/whisper-timestamp
+      dockerfile: Dockerfile
+    container_name: clipping-whisper-timestamp-worker
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHON_EXECUTABLE=python3
+      - PYTORCH_HOME=/app/torch_hub
+      - WHISPER_TIMESTAMP_WORKER_CONCURRENCY=1
+    volumes:
+      - ./workers/whisper-timestamp:/app
+      - /app/node_modules
+      - whisper_timestamp_logs:/app/logs
+      - whisper_timestamp_models:/app/models
+      - whisper_timestamp_temp:/app/temp
+      - whisper_timestamp_uploads:/app/uploads
+      - whisper_timestamp_output:/app/output
+      - whisper_timestamp_torch:/app/torch_hub
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+  # Video Worker
+  video-worker:
+    build:
+      context: ./workers/video
+      dockerfile: Dockerfile
+    container_name: clipping-video-worker
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - VIDEO_WORKER_CONCURRENCY=2
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - FFPROBE_PATH=/usr/bin/ffprobe
+    volumes:
+      - ./workers/video:/app
+      - /app/node_modules
+      - video_logs:/app/logs
+      - video_temp:/app/temp
+      - video_uploads:/app/uploads
+      - video_output:/app/output
+      - video_frames:/app/frames
+      - video_thumbnails:/app/thumbnails
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+  # Storage Service (placeholder for future implementation)
+  storage-service:
+    build:
+      context: ./storage-service
+      dockerfile: Dockerfile
+    container_name: clipping-storage-service
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=3005
+    volumes:
+      - ./storage-service:/app
+      - /app/node_modules
+      - storage_logs:/app/logs
+      - storage_uploads:/app/uploads
+      - storage_output:/app/output
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+  # API Gateway (placeholder for future implementation)
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: clipping-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_SERVICE_URL=http://queue-service:3004
+      - STORAGE_SERVICE_URL=http://storage-service:3005
+      - PORT=3000
+    volumes:
+      - ./api-gateway:/app
+      - /app/node_modules
+      - gateway_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      queue-service:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+  # Development utilities
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: clipping-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - clipping-network
+
+# Volumes for persistent data
+volumes:
+  redis_data:
+  ollama_data:
+  queue_logs:
+  ai_logs:
+  ai_models:
+  transcription_logs:
+  transcription_models:
+  transcription_temp:
+  transcription_uploads:
+  transcription_output:
+  whisper_timestamp_logs:
+  whisper_timestamp_models:
+  whisper_timestamp_temp:
+  whisper_timestamp_uploads:
+  whisper_timestamp_output:
+  whisper_timestamp_torch:
+  video_logs:
+  video_temp:
+  video_uploads:
+  video_output:
+  video_frames:
+  video_thumbnails:
+  storage_logs:
+  storage_uploads:
+  storage_output:
+  gateway_logs:
+
+# Networks
+networks:
+  clipping-network:
+    driver: bridge 

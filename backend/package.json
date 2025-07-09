@@ -1,0 +1,41 @@
+{
+  "name": "video-clipper-backend",
+  "version": "1.0.0",
+  "description": "Backend API for video clipping application",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "compromise": "^14.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "fs-extra": "^11.1.1",
+    "multer": "^2.0.1",
+    "natural": "^6.12.0",
+    "nodejs-whisper": "^0.2.9",
+    "similarity": "^1.2.1",
+    "uuid": "^9.0.0",
+    "wavefile": "^11.0.0",
+    "youtube-dl-exec": "^2.5.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "video",
+    "processing",
+    "clips",
+    "ffmpeg",
+    "youtube",
+    "transcription",
+    "nlp"
+  ],
+  "author": "",
+  "license": "MIT"
+}

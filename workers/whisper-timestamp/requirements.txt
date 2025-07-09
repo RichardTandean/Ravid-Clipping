@@ -1,0 +1,22 @@
+# Whisper Timestamped Dependencies
+whisper-timestamped>=3.1.0
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Additional dependencies for better performance
+transformers>=4.30.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Voice Activity Detection (optional but recommended)
+# Note: These will be automatically installed by whisper-timestamped if needed
+# silero-vad
+# auditok
+
+# JSON handling (usually pre-installed)
+# Standard library modules don't need to be listed here, but for documentation:
+# - json (built-in)
+# - sys (built-in) 
+# - os (built-in)
+# - argparse (built-in)
+# - tempfile (built-in) 

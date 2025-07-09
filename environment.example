@@ -1,0 +1,79 @@
+# Development Environment Configuration
+# Copy this file to .env and modify as needed
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Service Ports
+QUEUE_SERVICE_PORT=3004
+STORAGE_SERVICE_PORT=3005
+API_GATEWAY_PORT=3000
+
+# Worker Concurrency Settings
+AI_WORKER_CONCURRENCY=2
+TRANSCRIPTION_WORKER_CONCURRENCY=1
+WHISPER_TIMESTAMP_WORKER_CONCURRENCY=1
+VIDEO_WORKER_CONCURRENCY=2
+
+# AI Configuration (Ollama)
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=llama3.2:3b
+
+# Transcription Configuration
+WHISPER_MODEL=medium
+WHISPER_LANGUAGE=auto
+
+# Video Processing Configuration
+FFMPEG_PATH=/usr/bin/ffmpeg
+FFPROBE_PATH=/usr/bin/ffprobe
+
+# Python Configuration (for whisper-timestamp worker)
+PYTHON_EXECUTABLE=python3
+PYTORCH_HOME=./torch_hub
+
+# Storage Configuration
+STORAGE_TYPE=local
+STORAGE_PATH=./storage
+
+# Logging Configuration
+LOG_LEVEL=info
+LOG_TO_FILE=true
+
+# Development Settings
+NODE_ENV=development
+DEBUG=true
+
+# External Service URLs (for API Gateway)
+QUEUE_SERVICE_URL=http://localhost:3004
+STORAGE_SERVICE_URL=http://localhost:3005
+
+# Frontend Configuration (if running separately)
+FRONTEND_URL=http://localhost:3001
+BACKEND_URL=http://localhost:3000
+
+# Database Configuration (if using PostgreSQL/MySQL)
+# DATABASE_URL=postgresql://user:password@localhost:5432/clipping_platform
+# DATABASE_HOST=localhost
+# DATABASE_PORT=5432
+# DATABASE_NAME=clipping_platform
+# DATABASE_USER=user
+# DATABASE_PASSWORD=password
+
+# Authentication Configuration (if implementing)
+# JWT_SECRET=your-super-secret-jwt-key
+# JWT_EXPIRATION=7d
+
+# File Upload Limits
+MAX_FILE_SIZE=500MB
+MAX_VIDEO_DURATION=3600
+
+# Queue Configuration
+QUEUE_DEFAULT_JOB_TIMEOUT=300000
+QUEUE_DEFAULT_ATTEMPTS=3
+QUEUE_CLEANUP_INTERVAL=3600000
+
+# Monitor Configuration
+ENABLE_QUEUE_DASHBOARD=true
+ENABLE_METRICS=true 
