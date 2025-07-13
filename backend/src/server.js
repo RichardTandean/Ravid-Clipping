@@ -1120,6 +1120,13 @@ async function generateTranscriptAsync(videoPath, sessionId, options = {}) {
     // Clean up uploaded video file
     await fs.remove(videoPath)
 
+    // Validate result structure
+    if (!result || !result.transcriptData) {
+      throw new Error('Invalid transcription result: missing transcriptData')
+    }
+
+    const transcriptData = result.transcriptData
+    
     sendProgress(sessionId, {
       type: 'complete',
       stage: 'complete',
@@ -1127,10 +1134,10 @@ async function generateTranscriptAsync(videoPath, sessionId, options = {}) {
       message: 'Transcript generated successfully!',
       data: {
         success: true,
-        transcript: result.transcript,
-        fullTranscript: result.fullTranscript,
-        language: result.transcript.language,
-        segmentCount: result.transcript.segments.length
+        transcript: transcriptData,
+        fullTranscript: transcriptData.fullText || transcriptData.text || '',
+        language: transcriptData.language || 'auto',
+        segmentCount: (transcriptData.segments && Array.isArray(transcriptData.segments)) ? transcriptData.segments.length : 0
       }
     })
 
